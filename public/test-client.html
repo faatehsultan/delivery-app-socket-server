@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TEST CLIENT - Heavy Vehicle Delivery App</title>
+    <script src="/socket.io/socket.io.js"></script>
+  </head>
+  <body>
+    <h2>TEST CLIENT - Heavy Vehicle Delivery App Socket Server</h2>
+    <br />
+    <input type="text" id="new-msg" />
+    <button id="submitter">SEND</button>
+
+    <br />
+    <p id="server-response" style="font-weight: bold"></p>
+
+    <script>
+      const socket = io();
+
+      socket.on("connect", () => {
+        console.log(`${socket?.id} new user connected`);
+      });
+
+      socket.on("NEW_DELIVERY_REQUEST", (data) => {
+        console.log("new delivery request", data);
+      });
+
+      socket.on("pong", (data) => {
+        document.getElementById("server-response").textContent = data;
+      });
+
+      document.getElementById("submitter").addEventListener("click", () => {
+        const text = document.getElementById("new-msg")?.value;
+
+        socket.emit("ping", text);
+      });
+    </script>
+  </body>
+</html>
