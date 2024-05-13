@@ -26,18 +26,18 @@ app.get("/socket.io/socket.io.js", (req, res) => {
   res.sendFile(__dirname + "/node_modules/socket.io/client-dist/socket.io.js");
 });
 
+// api for backend to call on
+app.post("/api/forward-emit", (req, res) => {
+  const data = req?.body;
+  console.log("data", data);
+  io.emit(EVENT_TYPES.NEW_DELIVERY_REQUEST, data);
+
+  res.sendStatus(200);
+});
+
 // socket io event handling
 io.on("connection", (socket) => {
   console.log(`${socket?.id} new user connected`);
-
-  // api for backend to call on
-  app.post("/api/forward-emit", (req, res) => {
-    const data = req?.body;
-    console.log("data", data);
-    io.emit(EVENT_TYPES.NEW_DELIVERY_REQUEST, data);
-
-    res.sendStatus(200);
-  });
 
   // FOR TESTING: MANUAL PING PONG
   socket.on("ping", (data) => {
