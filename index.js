@@ -49,6 +49,15 @@ app.post('/api/emit-status-update', (req, res) => {
   res.sendStatus(200);
 });
 
+// api for backend to call on payment update
+app.post('/api/emit-payment-update', (req, res) => {
+  const data = req?.body;
+  console.log('data', data);
+  io.emit(EVENT_TYPES.PAYMENT_UPDATE, data);
+
+  res.sendStatus(200);
+});
+
 // socket io event handling
 io.on('connection', (socket) => {
   console.log(`${socket?.id} new user connected`);
