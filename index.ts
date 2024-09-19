@@ -1,64 +1,62 @@
-const express = require('express');
-const http = require('http');
-const socketIo = require('socket.io');
-const cors = require('cors');
-const routes = require('./routes');
+import express from 'express';
+import http from 'http';
+import { Server as SocketIOServer, Socket } from 'socket.io';
+import cors from 'cors';
+import routes from './routes';
 
-const { EVENT_TYPES } = require('./constants');
+import { EVENT_TYPES } from './constants';
+import { IQueryOnConnect } from './types';
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server);
+const io = new SocketIOServer();
 
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
 const PORT = process.env.PORT || 8001;
-let connectedClients = {};
+let connectedClients: { [key: string]: any } = {};
 
 app.use('/', routes);
 
-const saveClientInfo = (socket) => {
+const saveClientInfo = (socket: Socket) => {
   const clientId = socket.id;
-  const { uid, metadata } = socket.handshake.query;
+  const { uid, expoToken, extras, metadata }: IQueryOnConnect = socket.handshake
+    .query as any;
 
-  // Store or update the client info
+  if (!uid) return null;
+
   connectedClients[uid] = {
     socketId: clientId,
+    expoToken,
+    extras: extras ? JSON.parse(extras) : {},
     metadata: metadata ? JSON.parse(metadata) : {},
     lastConnected: new Date().toISOString(),
   };
 
   console.log(`Client connected: ${uid}`, connectedClients[uid]);
 
-  // Send updated list of clients to all connected clients
   io.emit('updateClients', connectedClients);
 };
 
-// Socket.IO connection
 io.on('connection', (socket) => {
-  const uid = socket.handshake.query.uid;
+  const uid: string = socket.handshake.query.uid as any;
 
-  // Store or update the client info on connection
   saveClientInfo(socket);
 
-  // Handle disconnect
   socket.on('disconnect', () => {
     console.log(`Client disconnected: ${uid}`);
 
     if (connectedClients[uid]) {
-      // Remove the socketId on disconnect, keep the metadata
       delete connectedClients[uid].socketId;
 
       console.log(`Client socketId removed: ${uid}`, connectedClients[uid]);
 
-      // Send updated list of clients to all connected clients
       io.emit('updateClients', connectedClients);
     }
   });
 
-  // Broadcast message to all clients
   socket.on('broadcastMessage', (message) => {
     io.emit('receiveMessage', message);
   });

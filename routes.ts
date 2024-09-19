@@ -1,6 +1,7 @@
-const express = require('express');
+import express from 'express';
+import path from 'path';
+
 const router = express.Router();
-const path = require('path');
 
 // Route for the homepage
 router.get('/', (req, res) => {
@@ -19,4 +20,4 @@ router.get('/socket.io/socket.io.js', (req, res) => {
   );
 });
 
-module.exports = router;
+export default router;
