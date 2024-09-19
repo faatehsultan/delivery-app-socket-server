@@ -21,11 +21,13 @@ app.use('/', routes);
 
 const saveClientInfo = (socket) => {
   const clientId = socket.id;
-  const { uid, metadata } = socket.handshake.query;
+  const { uid, expoToken, extras, metadata } = socket.handshake.query;
 
   // Store or update the client info
   connectedClients[uid] = {
     socketId: clientId,
+    expoToken,
+    extras: extras ? JSON.parse(extras) : {},
     metadata: metadata ? JSON.parse(metadata) : {},
     lastConnected: new Date().toISOString(),
   };
