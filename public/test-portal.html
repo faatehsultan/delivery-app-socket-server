@@ -23,6 +23,12 @@
       <div class="input-group mb-3">
         <input
           type="text"
+          id="broadcast-title"
+          class="form-control"
+          placeholder="Enter your title"
+        />
+        <input
+          type="text"
           id="broadcast-message"
           class="form-control"
           placeholder="Enter your message"
@@ -53,7 +59,7 @@
           const client = clients[uid];
           const listItem = document.createElement('li');
           listItem.className = 'list-group-item';
-          listItem.innerText = `Client ID: ${uid} (${client?.socketId})`;
+          listItem.innerText = `Client ID: ${uid} (${client?.socketId}) - ExpoToken (${client?.expoToken})`;
           clientsList.appendChild(listItem);
         });
       });
@@ -62,17 +68,19 @@
       document
         .getElementById('send-broadcast')
         .addEventListener('click', () => {
+          const title = document.getElementById('broadcast-title').value;
           const message = document.getElementById('broadcast-message').value;
-          socket.emit('broadcastMessage', message);
+          socket.emit('broadcastMessage', { title, message });
+          document.getElementById('broadcast-title').value = '';
           document.getElementById('broadcast-message').value = '';
         });
 
       // Receive broadcasted message
-      socket.on('receiveMessage', (message) => {
+      socket.on('receiveMessage', ({ title, message }) => {
         const messagesList = document.getElementById('messages-list');
         const listItem = document.createElement('li');
         listItem.className = 'list-group-item';
-        listItem.innerText = message;
+        listItem.innerText = `Title: ${title} - Message: ${message}`;
         messagesList.appendChild(listItem);
       });
     </script>

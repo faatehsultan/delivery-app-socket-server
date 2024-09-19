@@ -5,6 +5,7 @@ const cors = require('cors');
 const routes = require('./routes');
 
 const { EVENT_TYPES } = require('./constants');
+const { sendExpoPushNotification } = require('./expo');
 
 const app = express();
 const server = http.createServer(app);
@@ -61,8 +62,15 @@ io.on('connection', (socket) => {
   });
 
   // Broadcast message to all clients
-  socket.on('broadcastMessage', (message) => {
-    io.emit('receiveMessage', message);
+  socket.on('broadcastMessage', ({ title, message }) => {
+    io.emit('receiveMessage', { title, message });
+    sendExpoPushNotification(
+      title,
+      message,
+      Object.keys(connectedClients)?.map(
+        (uid) => connectedClients[uid]?.expoToken,
+      ),
+    );
   });
 });
 
