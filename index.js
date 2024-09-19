@@ -2,8 +2,8 @@ const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const cors = require('cors');
+const routes = require('./routes');
 
-const { UserSocketMap } = require('./lib');
 const { EVENT_TYPES } = require('./constants');
 
 const app = express();
@@ -14,18 +14,57 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// internal routes for testing
-app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/public/index.html');
+const PORT = process.env.PORT || 8001;
+let connectedClients = {};
+
+app.use('/', routes);
+
+const saveClientInfo = (socket) => {
+  const clientId = socket.id;
+  const { uid, metadata } = socket.handshake.query;
+
+  // Store or update the client info
+  connectedClients[uid] = {
+    socketId: clientId,
+    metadata: metadata ? JSON.parse(metadata) : {},
+    lastConnected: new Date().toISOString(),
+  };
+
+  console.log(`Client connected: ${uid}`, connectedClients[uid]);
+
+  // Send updated list of clients to all connected clients
+  io.emit('updateClients', connectedClients);
+};
+
+// Socket.IO connection
+io.on('connection', (socket) => {
+  const uid = socket.handshake.query.uid;
+
+  // Store or update the client info on connection
+  saveClientInfo(socket);
+
+  // Handle disconnect
+  socket.on('disconnect', () => {
+    console.log(`Client disconnected: ${uid}`);
+
+    if (connectedClients[uid]) {
+      // Remove the socketId on disconnect, keep the metadata
+      delete connectedClients[uid].socketId;
+
+      console.log(`Client socketId removed: ${uid}`, connectedClients[uid]);
+
+      // Send updated list of clients to all connected clients
+      io.emit('updateClients', connectedClients);
+    }
+  });
+
+  // Broadcast message to all clients
+  socket.on('broadcastMessage', (message) => {
+    io.emit('receiveMessage', message);
+  });
 });
 
-app.get('/test-client', (req, res) => {
-  res.sendFile(__dirname + '/public/test-client.html');
-});
-
-app.get('/socket.io/socket.io.js', (req, res) => {
-  res.sendFile(__dirname + '/node_modules/socket.io/client-dist/socket.io.js');
-});
+// ================
 
 app.get('/event-keys', (req, res) => {
   res.send(EVENT_TYPES);
@@ -74,7 +113,6 @@ io.on('connection', (socket) => {
 });
 
 // run server
-const PORT = process.env.PORT || 8001;
 server.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
 });
