@@ -4,7 +4,6 @@ const socketIo = require('socket.io');
 const cors = require('cors');
 const routes = require('./routes');
 
-const { EVENT_TYPES } = require('./constants');
 const { sendExpoPushNotification } = require('./expo');
 
 const app = express();
@@ -91,12 +90,6 @@ io.on('connection', (socket) => {
     }
 
     emitExpo({ title, message, uid });
-  });
-
-  // events for triggers from backend
-  socket.on(EVENT_TYPES.NEW_DELIVERY_REQUEST.from_server, (data) => {
-    io.emit(EVENT_TYPES.NEW_DELIVERY_REQUEST.to_client, data);
-    emitExpo(data);
   });
 });
 
