@@ -33,6 +33,12 @@
           class="form-control"
           placeholder="Enter your message"
         />
+        <input
+          type="text"
+          id="broadcast-uid"
+          class="form-control"
+          placeholder="Enter target UID"
+        />
         <button id="send-broadcast" class="btn btn-primary">Send</button>
       </div>
 
@@ -70,9 +76,11 @@
         .addEventListener('click', () => {
           const title = document.getElementById('broadcast-title').value;
           const message = document.getElementById('broadcast-message').value;
-          socket.emit('broadcastMessage', { title, message });
+          const targetUID = document.getElementById('broadcast-uid').value;
+          socket.emit('broadcastMessage', { title, message, uid: targetUID });
           document.getElementById('broadcast-title').value = '';
           document.getElementById('broadcast-message').value = '';
+          document.getElementById('broadcast-uid').value = '';
         });
 
       // Receive broadcasted message
