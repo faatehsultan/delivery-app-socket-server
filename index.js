@@ -18,7 +18,7 @@ const PORT = process.env.PORT || 8001;
 let connectedClients = {};
 
 const emitExpo = (data) => {
-  if (data?.title && data?.message) {
+  if (data?.title || data?.message) {
     let targetTokens = [];
 
     if (data?.uid) {
@@ -29,7 +29,11 @@ const emitExpo = (data) => {
       );
     }
 
-    sendExpoPushNotification(data?.title, data?.message, targetTokens);
+    sendExpoPushNotification(
+      data?.title || data?.message,
+      data?.message || data?.title,
+      targetTokens,
+    );
   }
 };
 
@@ -77,48 +81,23 @@ io.on('connection', (socket) => {
   });
 
   // Broadcast message to all clients
-  socket.on('broadcastMessage', ({ title, message, uid }) => {
+  socket.on('broadcastMessage', (data, callback) => {
+    const { title, message, uid } = data;
     if (uid) {
       // Broadcast to specific uid
-      io.to(connectedClients[uid]?.socketId).emit('receiveMessage', {
-        title,
-        message,
-      });
+      io.to(connectedClients[uid]?.socketId).emit('receiveMessage', data);
     } else {
       // Broadcast to all connected clients
-      io.emit('receiveMessage', { title, message });
+      io.emit('receiveMessage', data);
     }
 
     emitExpo({ title, message, uid });
+
+    if (callback) {
+      callback();
+    }
   });
 });
-
-// api for backend to call on new request
-// app.post('/api/emit-new-request', (req, res) => {
-//   const data = req?.body;
-//   console.log('data', data);
-//   io.emit(EVENT_TYPES.NEW_DELIVERY_REQUEST, data);
-
-//   res.sendStatus(200);
-// });
-
-// // api for backend to call on status update
-// app.post('/api/emit-status-update', (req, res) => {
-//   const data = req?.body;
-//   console.log('data', data);
-//   io.emit(EVENT_TYPES.DELIVERY_STATUS_UPDATE, data);
-
-//   res.sendStatus(200);
-// });
-
-// // api for backend to call on payment update
-// app.post('/api/emit-payment-update', (req, res) => {
-//   const data = req?.body;
-//   console.log('data', data);
-//   io.emit(EVENT_TYPES.PAYMENT_UPDATE, data);
-
-//   res.sendStatus(200);
-// });
 
 // run server
 server.listen(PORT, () => {
