@@ -24,9 +24,9 @@ const emitExpo = (data) => {
     if (data?.uid) {
       targetTokens = [connectedClients[data?.uid]?.expoToken];
     } else {
-      targetTokens = Object.keys(connectedClients)
-        ?.map((uid) => connectedClients[uid]?.expoToken)
-        .filter((token) => Expo.isExpoPushToken(token));
+      targetTokens = Object.keys(connectedClients)?.map(
+        (uid) => connectedClients[uid]?.expoToken,
+      );
     }
 
     sendExpoPushNotification(
