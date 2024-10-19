@@ -97,6 +97,20 @@ io.on('connection', (socket) => {
       callback();
     }
   });
+
+  // on receiving location updates from the clients
+  socket.on('updateLocationToServer', (data, callback) => {
+    const { uid, lat, lon } = data;
+
+    if (lat && lon) {
+      connectedClients[uid].location = { lat, lon };
+      io.emit('updateLocationToClients', data);
+    }
+
+    if (callback) {
+      callback();
+    }
+  });
 });
 
 // run server

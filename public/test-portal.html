@@ -91,6 +91,10 @@
         listItem.innerText = `Title: ${title} - Message: ${message}`;
         messagesList.appendChild(listItem);
       });
+
+      socket.on('updateLocationToClients', (data) => {
+        console.log('updateLocationToClients', data);
+      });
     </script>
   </body>
 </html>
