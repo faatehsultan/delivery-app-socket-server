@@ -3,6 +3,7 @@ const http = require('http');
 const socketIo = require('socket.io');
 const cors = require('cors');
 const routes = require('./routes');
+const { saveUserLocationToDb } = require('./firebase');
 
 const { sendExpoPushNotification } = require('./expo');
 
@@ -113,6 +114,12 @@ io.on('connection', (socket) => {
 
       const uid = Object.keys(connectedClients)[uidIndex];
       connectedClients[uid].location = { latitude, longitude };
+
+      // Save the location to the database
+      saveUserLocationToDb(uid, {
+        latitude,
+        longitude,
+      });
 
       io.emit('updateLocationToClients', data);
     }
