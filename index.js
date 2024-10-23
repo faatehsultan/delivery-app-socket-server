@@ -100,10 +100,20 @@ io.on('connection', (socket) => {
 
   // on receiving location updates from the clients
   socket.on('updateLocationToServer', (data, callback) => {
-    const { uid, lat, lon } = data;
+    const { latitude, longitude } = data;
 
-    if (lat && lon) {
-      connectedClients[uid].location = { lat, lon };
+    if (latitude && longitude) {
+      const uidIndex = Object.keys(connectedClients).findIndex(
+        (key) => connectedClients[key]?.socketId === socket.id,
+      );
+
+      if (uidIndex === -1) {
+        return;
+      }
+
+      const uid = Object.keys(connectedClients)[uidIndex];
+      connectedClients[uid].location = { latitude, longitude };
+
       io.emit('updateLocationToClients', data);
     }
 
