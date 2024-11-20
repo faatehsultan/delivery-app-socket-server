@@ -22,13 +22,9 @@ const emitExpo = (data) => {
   if (data?.title || data?.message) {
     let targetTokens = [];
 
-    if (data?.uid) {
-      targetTokens = [connectedClients[data?.uid]?.expoToken];
-    } else {
-      targetTokens = Object.keys(connectedClients)?.map(
-        (uid) => connectedClients[uid]?.expoToken,
-      );
-    }
+    targetTokens = Object.keys(connectedClients)
+      .filter((uid) => data?.uids?.includes(uid))
+      ?.map((uid) => connectedClients[uid]?.expoToken);
 
     sendExpoPushNotification(
       data?.title || data?.message,
@@ -42,7 +38,7 @@ app.use('/', routes);
 
 const saveClientInfo = (socket) => {
   const clientId = socket.id;
-  const { uid, expoToken, extras, metadata } = socket.handshake.query;
+  const { uid, expoToken, extras, metadata, role } = socket.handshake.query;
 
   // Store or update the client info
   connectedClients[uid] = {
@@ -51,6 +47,7 @@ const saveClientInfo = (socket) => {
     extras: extras ? JSON.parse(extras) : {},
     metadata: metadata ? JSON.parse(metadata) : {},
     lastConnected: new Date().toISOString(),
+    role: role ?? null,
   };
 
   console.log(`Client connected: ${uid}`, connectedClients[uid]);
@@ -83,16 +80,45 @@ io.on('connection', (socket) => {
 
   // Broadcast message to all clients
   socket.on('broadcastMessage', (data, callback) => {
-    const { title, message, uid } = data;
-    if (uid) {
-      // Broadcast to specific uid
-      io.to(connectedClients[uid]?.socketId).emit('receiveMessage', data);
-    } else {
-      // Broadcast to all connected clients
-      io.emit('receiveMessage', data);
+    const { title, message, uids, role } = data;
+
+    if (!title || !message) {
+      console.log('ERROR: title and message are required');
     }
 
-    emitExpo({ title, message, uid });
+    if (uids?.length > 0 && roles?.length) {
+      console.log(
+        'ERROR: Either uids or roles, or none of them can be provided, but not both',
+      );
+    }
+
+    if (role !== 'DRIVER' && role !== 'CUSTOMER') {
+      console.log('ERROR: role must be either DRIVER or CUSTOMER');
+    }
+
+    const targetUIDs =
+      uids?.length > 0
+        ? uids
+        : role
+          ? Object.keys(connectedClients).filter(
+              (key) => connectedClients[key]?.role === role,
+            )
+          : Object.keys(connectedClients);
+
+    // broadcasting to socket clients
+    if (!uids?.length && !role) {
+      io.emit('receiveMessage', data);
+    } else {
+      targetUIDs?.forEach((uid) => {
+        io.to(connectedClients[uid]?.socketId).emit('receiveMessage', data);
+      });
+    }
+
+    emitExpo({
+      title,
+      message,
+      uids: targetUIDs,
+    });
 
     if (callback) {
       callback();
